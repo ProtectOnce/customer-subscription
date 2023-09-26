@@ -1,23 +1,38 @@
-import logo from './logo.svg';
+import { API, graphqlOperation } from 'aws-amplify';
+import React, { useEffect } from 'react';
 import './App.css';
+import './amplify-config';
+
+const onCreateApplicationEvent = /* GraphQL */ `
+  subscription OnCreateApplicationEvent($tenantId: String) {
+    oncreateApplicationEvent(tenantId: $tenantId) {
+      tenantId
+      application_id
+      application_name
+      environment
+    }
+  }
+`;
 
 function App() {
+  useEffect(() => {
+    const subscription = API.graphql(
+      graphqlOperation(onCreateApplicationEvent, { tenantId: process.env.TENANTID })
+    ).subscribe({
+      next: (eventData) => {
+        console.log(`[SUBSCRIPTION] CreateApplicationEvent - Data received:`, JSON.stringify(eventData, null, 2));
+      },
+      error: (error) => {
+        console.error(`[SUBSCRIPTION] CreateApplicationEvent - Error:`, error);
+      },
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <h1>Amplify Subscriptions Example</h1>
     </div>
   );
 }
